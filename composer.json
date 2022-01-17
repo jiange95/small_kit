@@ -17,7 +17,7 @@
             "JanGe\\SmallKit\\": "src/"
         },
         "files": [
-            "src/helpers.php"
+            "src/helper.php"
         ]
     }
 }
