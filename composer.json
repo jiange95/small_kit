@@ -1,0 +1,23 @@
+{
+  "name": "jiange95/small_kit",
+  "description": "A small kit for PHP",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "jiange95",
+      "email": "gejian58@gmail.com"
+    }
+  ],
+  "require": {
+        "php": ">=7.3.0"
+  },
+  "autoload": {
+        "psr-4": {
+            "JanGe\\SmallKit\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    }
+}
