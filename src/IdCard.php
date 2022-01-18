@@ -200,9 +200,9 @@ class IdCard
      * 根据年判断星座
      * JUDGING CONSTELLATION SIGNS BY YEAR
      * @param $birth
-     * @return array|false
+     * @return string
      */
-    public static function birthed($birth)
+    public static function birthed($birth): string
     {
 
         $m = (int)date("m", $birth);
@@ -229,9 +229,9 @@ class IdCard
      * @param null $y
      * @return string
      */
-    public static function zodiac($idCard,$y=null): string
+    public static function zodiac($idCard, $y = null): string
     {
-        if ($y===null){
+        if ($y === null) {
             $y = (int)date("Y", strtotime(self::birthday($idCard)));
         }
         $dict = array(array('甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'), array('子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'));
@@ -246,9 +246,9 @@ class IdCard
      * @param null $y
      * @return string
      */
-    public static function signOfTheZodiac($idCard,$y=null): string
+    public static function signOfTheZodiac($idCard, $y = null): string
     {
-        if ($y===null){
+        if ($y === null) {
             $y = (int)date("Y", strtotime(self::birthday($idCard)));
         }
         $dict = array('鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪');

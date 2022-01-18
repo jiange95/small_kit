@@ -1,20 +1,20 @@
 <?php
+
+
 namespace JanGe\SmallKit;
 
 use Exception;
-use JanGe\SmallKit\IdCard;
-use JanGe\SmallKit\IP;
 
 class Helper
 {
     /**
-     * 返回类
+     * 返回格式化
      * @param int $code
-     * @param $msg
+     * @param string $msg
      * @param string $data
      * @return Exception|false|string
      */
-    public static function response(int $code,string $msg, $data='')
+    public static function response(int $code, string $msg, $data = '')
     {
         try {
             return json_encode(['code' => $code, 'msg' => $msg, $data], JSON_THROW_ON_ERROR);
