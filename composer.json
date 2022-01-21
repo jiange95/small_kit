@@ -10,16 +10,17 @@
     }
   ],
   "require": {
-        "php": ">=7.3.0",
-        "ext-json": "*",
-        "ext-curl": "*"
+    "php": ">=7.3.0",
+    "ext-json": "*",
+    "ext-curl": "*",
+    "ext-openssl": "*"
   },
   "autoload": {
-        "psr-4": {
-            "JanGe\\SmallKit\\": "src/"
-        },
-        "files": [
-            "src/helper.php"
-        ]
-    }
+    "psr-4": {
+      "JanGe\\SmallKit\\": "src/"
+    },
+    "files": [
+      "src/helper.php"
+    ]
+  }
 }
