@@ -3,19 +3,24 @@
 #### 介绍
 一个小型PHP工具箱
 
-#### 软件架构
-软件架构说明
-
-
+#### 软件目录
+软件目录说明
+######----Src
+######---------Helper.php--返回格式化JSON的输出
+######---------gcm.php--命令行脚本
+######---------GameIdCard.php--中宣部网络游戏防沉迷身份证实名认证以及游戏上下线数据报告
+######---------IdCard.php--基础过滤假身份证号，根据身份证号获取生肖星座天干地支
+######---------IP.php--分析IP
+######---------in.php--PHP的人脸识别（还没有实现）
+######----Vendor//第三方依赖目录
 #### 安装教程
 
-1. 还没上传别用 composer require "jiange95/small_kit"
+1.  composer require "jiange95/small_kit"
 2.  use JanGe\SmallKit\Helper;
-3.  xxxx
 
 #### 使用说明
 
-1.  xxxx
+1.  Helper::response()提供JSON格式化返回输出 
 2.  xxxx
 3.  xxxx
 
