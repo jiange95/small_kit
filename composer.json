@@ -16,11 +16,11 @@
         "ext-openssl": "*"
   },
   "autoload": {
-        "psr-4": {
-            "JanGe\\SmallKit\\": "src/"
-        },
-        "files": [
-            "src/helper.php"
-        ]
-    }
+    "psr-4": {
+      "JanGe\\SmallKit\\": "src/"
+    },
+    "files": [
+      "src/helper.php"
+    ]
+  }
 }

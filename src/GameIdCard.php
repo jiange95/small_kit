@@ -7,10 +7,14 @@
 
 namespace JanGe\SmallKit;
 
+use Exception;
+use JsonException;
+use JanGe\SmallKit\Helper;
+
 class GameIdCard
 {
 
-    //实名认证验证地址
+    //网络游戏实名认证验证地址
     private $urlCheck = "https://api.wlc.nppa.gov.cn/idcard/authentication/check";
     //游戏备案号
     private $bizId = '游戏备案号';
@@ -18,12 +22,22 @@ class GameIdCard
     private $appId = 'appID';
     //加密用的key
     private $secretKey = '加密用的key';
-    //实名认证查询地址：
+    //网络游戏实名认证查询地址：
     private $urlQuery = "https://api2.wlc.nppa.gov.cn/idcard/authentication/query";
     //网络游戏实名认证退出地址
     private $urlLoginOut = "https://api2.wlc.nppa.gov.cn/behavior/collection/loginout";
 
-    //send GET request
+
+    /**
+     * 发送get请求
+     * @param $url
+     * @param $appId
+     * @param $bizId
+     * @param $timestamps
+     * @param $sign
+     * @return bool|string
+     */
+
     private function curl_get($url, $appId, $bizId, $timestamps, $sign)
     {
         $curl = $this->getCurl($appId, $bizId, $timestamps, $sign, $url);
@@ -35,7 +49,17 @@ class GameIdCard
         //echo $data;
         return $data;
     }
-    //send POST request
+
+    /**
+     * 发送post请求
+     * @param $url
+     * @param $appId
+     * @param $bizId
+     * @param $timestamps
+     * @param $sign
+     * @param $postData
+     * @return bool|string
+     */
     private function curl_post($url, $appId, $bizId, $timestamps, $sign, $postData)
     {
         $curl = $this->getCurl($appId, $bizId, $timestamps, $sign, $url);
@@ -50,17 +74,20 @@ class GameIdCard
     }
 
     /**
+     * 编码一
      * @param int $timestamps
      * @param array $data
      * @return string
      */
     private function sign(int $timestamps,array $data): string
+
     {
         $str = $this->secretKey . 'appId' . $this->appId . 'bizId' . $this->bizId . 'timestamps' . $timestamps . $data;
         return hash("sha256", $str);
     }
 
     /**
+     * 编码二
      * @param int $timestamps
      * @param array $data
      * @return string
@@ -72,14 +99,17 @@ class GameIdCard
     }
 
     /**
+     * 实名认证入口
      * @param $name
      * @param $idCard
      * @param $user_name
      * @return void
+     * @throws JsonException
      */
-    public function chickID($name,$idCard,$user_name)
+
+    public function chickID($name, $idCard, $user_name): void
     {
-        $data2 = shell_exec("php /www/wwwroot/shouyou/control/gcm.php a=1 ai=" . md5($user_name) . " name=" . $name . " idNum=" . $idCard);
+        $data2=$this->aesGcmEncrypt(json_encode(['ai' => $user_name, 'name' => $name, 'idNum' => $idCard], JSON_THROW_ON_ERROR));
         list($data, $dataa) = $this->extracted($data2);
         $data3 = json_decode($dataa, true);
 
@@ -109,86 +139,75 @@ class GameIdCard
     }
 
     /**
-     * @return void
+     * 根据用户名查询对应的实名认证是否成功
+     * @param $user_name
+     * @return Exception|false|string
      */
-    public function query()
+    public function query($user_name)
     {
-        $user_name = req::item('username');
+
         $timestamps = explode(".", microtime(true) * 1000);
         $sign = $this->signq($timestamps[0], 'ai' . $user_name);
         $url = $this->urlQuery . "?ai=" . $user_name;
         $dataa = $this->curl_get($url, $this->appId, $this->bizId, $timestamps[0], $sign);
-        $data3 = json_decode($dataa, true);
-
-
-        if ($data3['errcode'] != 0) {
-            //认证失败
-            echo json_encode(['status' => 4]);
-            return;
-        } else {
-            $a = $data3['data']['result']['status'];
-
-            if ($a == 0 && $a != null) {
-                //认证成功修改用户
-                echo json_encode(['pi' => $data3['data']['result']['pi'], 'status' => 1]);
-                return;
-            } elseif ($a == 1) {
-                //认证中修改用户实名状态
-                echo json_encode(['status' => 2]);
-                return;
-            } else {
-                //认证失败
-                echo json_encode(['status' => 4]);
-                return;
-            }
-
+        try {
+            $data3 = json_decode($dataa, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            return Helper::response(500,'json解析失败');
         }
+        if ($data3['errcode'] !== 0) {
+            //认证失败
+             return Helper::response(400,'实名认证失败');
+        }
+        $a = $data3['data']['result']['status'];
+        if ($a === 0) {
+            //认证成功修改用户
+            return Helper::response(201,'实名认证成功',['pi' => $data3['data']['result']['pi']]);
+        }
+        if ($a === 1) {
+            //认证中修改用户实名状态
+            return Helper::response(201,'实名认证中请稍等');
+        }
+        //认证失败
+        return Helper::response(400,'实名认证失败，错误代码：');
     }
 
 
-    public function loginout()
+    public function loginout($pi,$bt,$ct,$di,$user_name)
     {
-        $pi = req::item('pi');
-        $bt = req::item('bt');
-        $ct = req::item('cta');
-        $di = req::item('di');
-        $user_name = req::item('username');
-        $data2 = shell_exec("php /www/wwwroot/shouyou/control/gcm.php a=0 no=1 si=" . md5($user_name) . " bt=" . $bt . " ot=" . time() . " ct=" . $ct . " di=" . md5($user_name . $di) . " pi=" . $pi);
-        $data = json_encode(["data" => $data2]);
+            $data1 = array();
+            $data1['no'] = 1;
+            $data1['si'] = $user_name;
+            $data1['bt'] = $bt;
+            $data1['ot'] = time();
+            $data1['ct'] = $ct;
+            $data1['pi'] = $pi;
+            $date = array('collections' => array($data1));
+        $data2=$this->aesGcmEncrypt(json_encode($date, JSON_THROW_ON_ERROR));
+
+        try {
+            $data = json_encode(["data" => $data2], JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            return Helper::response(500,'json生成失败');
+        }
         $timestamps = explode(".", microtime(true) * 1000);
         $sign = $this->sign($timestamps[0], $data);
         $dataa = $this->curl_post($this->urlLoginOut, $this->appId, $this->bizId, $timestamps[0], $sign, $data);
-        $data3 = json_decode($dataa, true);
-
-        if ($data3['errcode'] != 0) {
-            //发送失败
-            echo json_encode(['code' => 0]);
-            return;
-        } else {
-            //发送成功
-            echo json_encode(['code' => 1]);
-            return;
-
+        try {
+            $data3 = json_decode($dataa, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            return Helper::response(500,'json解析失败');
         }
 
+        if ($data3['errcode'] !== 0) {
+            //发送失败
+            return Helper::response(400,'发送失败');
+        }
+        //发送成功
+        return Helper::response(200,'发送成功');
+
     }
 
-    public function aesGcmEncrypt($string)
-    {
-        $cipher = strtolower('AES-128-GCM');
-        if (is_array($string)) $string = json_encode($string);
-        //二进制key
-        $skey = hex2bin($this->secretKey);
-        //二进制iv
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($cipher));
-
-        list($content, $tag) = \AESGCM\AESGCM::encrypt($skey, $iv, $string);
-        //如果环境是php7.1+,直接使用下面的方式
-        //  $tag = NULL;
-        //  $content = openssl_encrypt($string, $cipher, $skey,OPENSSL_RAW_DATA,$iv,$tag);
-        $str = bin2hex($iv) . bin2hex($content) . bin2hex($tag);
-        return base64_encode(hex2bin($str));
-    }
 
     /**
      * 基础CURL配置
@@ -225,14 +244,38 @@ class GameIdCard
      * 根据配置发送报告到中宣部网络实名认证
      * @param string|null $data2
      * @return array
+     * @throws JsonException
      */
     private function extracted(?string $data2): array
     {
-        $data = json_encode(["data" => $data2]);
+        $data = json_encode(["data" => $data2], JSON_THROW_ON_ERROR);
         $timestamps = explode(".", microtime(true) * 1000);
         $sign = $this->sign($timestamps[0], $data);
         $dataa = $this->curl_post($this->urlCheck, $this->appId, $this->bizId, $timestamps[0], $sign, $data);
         return array($data, $dataa);
+    }
+
+
+
+    /**
+     * @param $string
+     * @return string
+     * @throws JsonException
+     */
+    private function aesGcmEncrypt($string): string
+    {
+        if (is_array($string)) {
+            $string = json_encode($string, JSON_THROW_ON_ERROR);
+        }
+        //二进制key
+        $key = hex2bin($this->secretKey);
+        $cipher = "aes-128-gcm";
+        $ivlen = openssl_cipher_iv_length($cipher);
+        $iv = openssl_random_pseudo_bytes($ivlen);
+
+        $encrypt = openssl_encrypt($string, $cipher, $key, OPENSSL_RAW_DATA, $iv, $tag);
+        return base64_encode(($iv . $encrypt . $tag));
+
     }
 
 
