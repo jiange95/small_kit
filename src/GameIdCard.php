@@ -23,6 +23,7 @@ class GameIdCard
     //网络游戏实名认证退出地址
     private $urlLoginOut = "https://api2.wlc.nppa.gov.cn/behavior/collection/loginout";
 
+    //send GET request
     private function curl_get($url, $appId, $bizId, $timestamps, $sign)
     {
         $curl = $this->getCurl($appId, $bizId, $timestamps, $sign, $url);
@@ -34,7 +35,7 @@ class GameIdCard
         //echo $data;
         return $data;
     }
-
+    //send POST request
     private function curl_post($url, $appId, $bizId, $timestamps, $sign, $postData)
     {
         $curl = $this->getCurl($appId, $bizId, $timestamps, $sign, $url);
@@ -48,32 +49,34 @@ class GameIdCard
         return $data;
     }
 
-    public function chickYYID($name,$idCard,$user_name)
-    {
-        $data1 = array(
-            'ai' => $user_name,
-            'name' => $name,
-            'idNum' => $idCard
-        );
-        $data2 = shell_exec("php /www/wwwroot/shouyou/control/gcm.php -a=" . json_encode($data1));
-
-        list($data, $dataa) = $this->extracted($data2);
-        var_dump($dataa);
-    }
-
-
-    private function sign($timestamps, $data)
+    /**
+     * @param int $timestamps
+     * @param array $data
+     * @return string
+     */
+    private function sign(int $timestamps,array $data): string
     {
         $str = $this->secretKey . 'appId' . $this->appId . 'bizId' . $this->bizId . 'timestamps' . $timestamps . $data;
         return hash("sha256", $str);
     }
 
-    private function signq($timestamps, $data)
+    /**
+     * @param int $timestamps
+     * @param array $data
+     * @return string
+     */
+    private function signq(int $timestamps,array $data)
     {
         $str = $this->secretKey . $data . 'appId' . $this->appId . 'bizId' . $this->bizId . 'timestamps' . $timestamps;
         return hash("sha256", $str);
     }
 
+    /**
+     * @param $name
+     * @param $idCard
+     * @param $user_name
+     * @return void
+     */
     public function chickID($name,$idCard,$user_name)
     {
         $data2 = shell_exec("php /www/wwwroot/shouyou/control/gcm.php a=1 ai=" . md5($user_name) . " name=" . $name . " idNum=" . $idCard);
@@ -105,7 +108,9 @@ class GameIdCard
         }
     }
 
-
+    /**
+     * @return void
+     */
     public function query()
     {
         $user_name = req::item('username');
@@ -186,6 +191,7 @@ class GameIdCard
     }
 
     /**
+     * 基础CURL配置
      * @param $appId
      * @param $bizId
      * @param $timestamps
@@ -193,7 +199,7 @@ class GameIdCard
      * @param $url
      * @return false|resource
      */
-    private function getCurl($appId, $bizId, $timestamps, $sign, $url)
+    private function getCurl($appId, $bizId, $timestamps, $sign, $url): bool
     {
         $headers = array();
         $headers[] = "Content-Type:application/json;charset=utf-8";
@@ -216,13 +222,13 @@ class GameIdCard
     }
 
     /**
+     * 根据配置发送报告到中宣部网络实名认证
      * @param string|null $data2
      * @return array
      */
     private function extracted(?string $data2): array
     {
         $data = json_encode(["data" => $data2]);
-        //$data = json_encode(["data" => $this->aesGcmEncrypt(json_encode($data1))]);
         $timestamps = explode(".", microtime(true) * 1000);
         $sign = $this->sign($timestamps[0], $data);
         $dataa = $this->curl_post($this->urlCheck, $this->appId, $this->bizId, $timestamps[0], $sign, $data);
